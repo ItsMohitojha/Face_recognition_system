@@ -10,12 +10,9 @@ An automated, real-time attendance system built with Python, Streamlit, OpenCV, 
 Ensure you have Python 3.8+ installed on your system.
 
 ### 2. Prepare the Images Folder
-> [!IMPORTANT]
-> For privacy reasons, student photographs and serialized face encodings are **not** committed to the Git repository.
-> 
-> You must create an `images` folder at the root directory of this project and add student images there.
-> - **Filename format:** Images should be named after the student's enrollment/roll number (e.g., `CI-135.jpeg`, `CI-152.jpeg`).
-> - Supported formats: `.jpeg`, `.jpg`, `.png`.
+Student photographs are stored in the `images/` directory at the root of the project.
+- **Filename format:** Images should be named after the student's enrollment/roll number (e.g., `CB-0161.jpeg`, `CB-1032.jpeg`).
+- Supported formats: `.jpeg`, `.jpg`, `.png`.
 
 ### 3. Update the Student Database
 Open `students.csv` and add your students with the following columns:

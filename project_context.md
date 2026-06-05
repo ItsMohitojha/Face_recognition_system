@@ -20,7 +20,7 @@ This project is an automated attendance system using real-time facial recognitio
 The project structure consists of the following components:
 
 ```
-├── .gitignore               # Excludes virtual environments, local caches, and private dataset folders (images/, encodings/)
+├── .gitignore               # Excludes virtual environments, local caches, and OS metadata
 ├── README.md                # Project landing page and setup guide
 ├── project_context.md       # [This File] Architecture and context reference
 ├── config.py                # Centralized file paths and datetime format configurations
@@ -73,11 +73,8 @@ pip install -r requirements.txt
 ```
 
 ### 2. Configure Local Folders
-Create `images/` and `encodings/` folders in the root directory:
-```bash
-mkdir images encodings
-```
-Place student portrait photos in `images/` named exactly after their enrollment IDs (e.g. `CI-152.jpeg`).
+The `images/` and `encodings/` folders are already tracked in Git. You do not need to create them manually. 
+To add new students, place their portrait photos in the `images/` folder and name them exactly after their enrollment IDs (e.g., `CB-0161.jpeg`).
 
 ### 3. Update students.csv
 Add student rows:
