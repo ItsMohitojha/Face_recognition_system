@@ -45,7 +45,7 @@ try:
                 known_encodings.append(encode)
                 known_names.append(name)
                 known_enrollments.append(enrollment_no)
-                logging.info(f"👍 Encoding successful for: {name} ({enrollment_no})")
+                logging.info(f"✅ Encoding successful for: {name} ({enrollment_no})")
             else:
                 logging.warning(f"🧐 No face found in '{image_filename}' for {name}. Skipping.")
 
