@@ -1,0 +1,89 @@
+# Face Recognition Attendance System - Project Report
+
+## 1. Project Overview
+The Face Recognition Attendance System is a Python-based application designed to automate the attendance process using facial recognition technology. It leverages computer vision libraries to detect and identify students from a live webcam feed and records their attendance in a CSV file. The system also includes a web interface built with Streamlit for easy interaction and management.
+
+## 2. Key Features
+- **Real-time Face Recognition:** Detects and identifies faces from a webcam feed in real-time.
+- **Automated Attendance:** Automatically marks attendance for identified students with the current timestamp.
+- **Duplicate Prevention:** Ensures attendance is marked only once per day for each student.
+- **Absentee Marking:** Ability to mark unidentified students as 'Absent' for the day.
+- **Data Persistence:** Stores attendance records in a CSV file (`Attendance.csv`), ensuring data is saved across sessions.
+- **Web Interface:** Provides a user-friendly GUI using Streamlit for encoding faces, viewing attendance, and monitoring the webcam.
+- **Thread Safety:** Uses file locking (`filelock`) to safely handle concurrent access to the attendance file.
+
+## 3. System Architecture & File Structure
+
+### 3.1 Core Modules
+- **`app.py`**: The main entry point for the Streamlit web application. It handles the UI, webcam streaming (via `streamlit-webrtc`), and invokes other modules.
+- **`attendance.py`**: Contains the core logic for managing the attendance CSV file. It handles:
+    - Syncing the student list with the attendance file.
+    - Initializing daily columns.
+    - Marking attendance and absentees.
+    - Thread-safe file operations using `filelock`.
+- **`decode.py`**: A standalone script for running the attendance system via a standard OpenCV window (without the web UI).
+- **`encode.py`**: A script to process student images, generate face encodings, and save them to disk for fast retrieval during recognition.
+- **`config.py`**: Centralized configuration file storing file paths and date/time formats.
+- **`mark_absent.py`**: A utility script to manually trigger the "mark absent" process.
+- **`test_attendance.py`**: Unit tests to ensure the reliability of the attendance marking logic and file handling.
+
+### 3.2 Data Files
+- **`students.csv`**: The master list of students containing `enrollment_no`, `name`, and `image_filename`.
+- **`Attendance.csv`**: The database of attendance records. Rows represent students, and columns represent dates.
+- **`encodings/`**: Directory storing serialized NumPy arrays (`.npy`) of face encodings, names, and enrollment numbers.
+- **`images/`**: Directory containing student reference images.
+
+## 4. Technical Details
+
+### 4.1 Face Recognition Logic
+The system uses the `face_recognition` library (built on dlib) to:
+1.  Load reference images and generate 128-dimensional face encodings.
+2.  Capture frames from the webcam.
+3.  Detect face locations in the current frame.
+4.  Compute encodings for detected faces.
+5.  Compare these encodings with the known reference encodings using Euclidean distance.
+6.  Identify the best match within a tolerance threshold.
+
+### 4.2 Attendance Management
+- **Initialization:** When the system starts or a new day begins, `attendance.py` checks if a column for the current date exists in `Attendance.csv`. If not, it adds the column.
+- **Marking:** When a face is recognized, the system updates the cell corresponding to the student and the current date with the current time.
+- **File Locking:** The `filelock` library is used to prevent race conditions when multiple threads or processes try to write to `Attendance.csv` simultaneously.
+
+### 4.3 Web Interface (Streamlit)
+- **`streamlit-webrtc`**: Used to stream video from the client's webcam to the server for processing.
+- **Session State**: Manages application state (e.g., logs, playing status).
+- **Queue-based Logging**: Implements a thread-safe logging mechanism to display backend logs in the Streamlit UI without concurrency issues.
+
+## 5. Dependencies
+- `opencv-python`: For image processing and video capture.
+- `numpy`: For numerical operations and handling arrays.
+- `face_recognition`: For state-of-the-art face recognition.
+- `streamlit`: For the web application framework.
+- `streamlit-webrtc`: For real-time video and audio streaming in Streamlit.
+- `pandas`: For data manipulation and displaying the attendance dataframe.
+- `filelock`: For file locking mechanisms.
+- `av`: For audio/video processing in WebRTC.
+
+## 6. Usage Instructions
+
+### 6.1 Setup
+1.  Ensure Python 3.x is installed.
+2.  Install dependencies: `pip install -r requirements.txt`
+3.  Place student images in the `images/` folder.
+4.  Update `students.csv` with student details and corresponding image filenames.
+
+### 6.2 Running the System
+1.  **Generate Encodings:** Run `python encode.py` (or use the "Encode Faces" button in the web app) to process images.
+2.  **Start Web App:** Run `streamlit run app.py`.
+    - Use the "Start" button in the webcam section to begin attendance.
+    - View logs and attendance records in the sidebar/main area.
+3.  **Standalone Mode:** Alternatively, run `python decode.py` for a simple windowed interface.
+
+## 7. Future Improvements
+- **Database Integration:** Migrate from CSV to a relational database (e.g., SQLite, PostgreSQL) for better scalability and data integrity.
+- **Authentication:** Add login functionality for administrators to secure the system.
+- **Reporting:** Generate detailed attendance reports (e.g., monthly, weekly) and export them as PDF or Excel.
+- **Liveness Detection:** Implement liveness checks to prevent spoofing with photos or videos.
+
+---
+*Report generated on 2025-11-27*
