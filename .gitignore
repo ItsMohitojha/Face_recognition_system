@@ -15,7 +15,3 @@ attendance.lock
 # OS metadata
 .DS_Store
 Thumbs.db
-
-# Student face dataset & generated encodings (for privacy)
-images/
-encodings/
