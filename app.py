@@ -146,7 +146,139 @@ def run_mark_absent():
 
 # Main Streamlit app
 def main():
-    st.title("Face Recognition Attendance System")
+    st.set_page_config(page_title="Stitch Attendance", layout="wide", page_icon="🧵")
+
+    # Custom CSS for Stitch UI
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700&display=swap');
+
+    /* Global Typography & Background */
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+        color: hsl(0, 0%, 90%);
+    }
+
+    /* Set overall background color for the dark mode */
+    .stApp {
+        background-color: hsl(220, 20%, 10%);
+    }
+
+    /* Headings */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Outfit', sans-serif;
+        color: hsl(0, 0%, 100%);
+    }
+
+    /* Main Title Styling */
+    .main-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(90deg, hsl(230, 80%, 70%), hsl(280, 80%, 70%));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* Glassmorphism Containers */
+    .glass-container {
+        background: hsla(220, 20%, 20%, 0.4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid hsla(220, 20%, 40%, 0.3);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 32px 0 hsla(0, 0%, 0%, 0.3);
+        margin-bottom: 1.5rem;
+    }
+
+    /* Metrics Cards */
+    .metric-card {
+        background: hsla(220, 20%, 20%, 0.4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid hsla(220, 20%, 40%, 0.3);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 16px 0 hsla(0, 0%, 0%, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px 0 hsla(0, 0%, 0%, 0.4);
+    }
+    .metric-title {
+        font-size: 1rem;
+        font-weight: 500;
+        color: hsl(220, 10%, 70%);
+        margin-bottom: 0.5rem;
+    }
+    .metric-value {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: hsl(0, 0%, 100%);
+    }
+
+    /* Stylish Buttons */
+    .stButton>button {
+        background: linear-gradient(135deg, hsl(230, 70%, 60%), hsl(280, 70%, 60%));
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px hsla(230, 70%, 60%, 0.3);
+        width: 100%;
+    }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px hsla(230, 70%, 60%, 0.5);
+        color: white;
+        border: none;
+    }
+    .stButton>button:active {
+        transform: translateY(0);
+    }
+
+    /* Input fields and tables styling */
+    .stTextInput>div>div>input {
+        background-color: hsla(220, 20%, 15%, 0.8);
+        color: white;
+        border: 1px solid hsla(220, 20%, 30%, 0.5);
+        border-radius: 8px;
+    }
+    .stTextInput>div>div>input:focus {
+        border-color: hsl(230, 70%, 60%);
+        box-shadow: 0 0 0 1px hsl(230, 70%, 60%);
+    }
+
+    /* Sidebar customization */
+    [data-testid="stSidebar"] {
+        background-color: hsl(220, 20%, 12%);
+        border-right: 1px solid hsla(220, 20%, 30%, 0.3);
+    }
+
+    /* Text Area (Logs) */
+    .stTextArea>div>div>textarea {
+        background-color: hsla(220, 20%, 15%, 0.8);
+        color: hsl(120, 60%, 70%); /* Matrix-like green for logs */
+        font-family: monospace;
+        border: 1px solid hsla(220, 20%, 30%, 0.5);
+        border-radius: 8px;
+    }
+
+    /* Dataframe styling overrides for dark theme */
+    [data-testid="stDataFrame"] {
+        background-color: transparent;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="main-title">Face Recognition Attendance System</div>', unsafe_allow_html=True)
 
     # Initialize session state for logs
     if 'logs' not in st.session_state:
@@ -168,37 +300,79 @@ def main():
         logger.addHandler(handler)
         st.session_state.logging_configured = True
 
+    # Calculate Statistics
+    total_students = 0
+    present_students = 0
+    absent_students = 0
+    today_str = datetime.now().strftime(config.DATE_FORMAT)
+
+    if os.path.exists(config.STUDENTS_FILE):
+        with open(config.STUDENTS_FILE, mode='r') as infile:
+            total_students = sum(1 for row in csv.reader(infile)) - 1  # -1 for header
+
+    if os.path.exists(config.ATTENDANCE_FILE):
+        df_att = pd.read_csv(config.ATTENDANCE_FILE)
+        if today_str in df_att.columns:
+            present_students = df_att[df_att[today_str].notna() & (df_att[today_str] != '') & (df_att[today_str] != 'Absent')].shape[0]
+            absent_students = df_att[df_att[today_str] == 'Absent'].shape[0]
+
+    # Statistics Dashboard
+    st.markdown("<h3>Today's Statistics</h3>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown(f'''
+        <div class="metric-card">
+            <div class="metric-title">Total Students</div>
+            <div class="metric-value">{total_students}</div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f'''
+        <div class="metric-card">
+            <div class="metric-title">Present</div>
+            <div class="metric-value" style="color: hsl(120, 60%, 60%);">{present_students}</div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(f'''
+        <div class="metric-card">
+            <div class="metric-title">Absent</div>
+            <div class="metric-value" style="color: hsl(0, 60%, 60%);">{absent_students}</div>
+        </div>
+        ''', unsafe_allow_html=True)
+
     # Log display
-    log_container = st.container()
-    with log_container:
-        st.subheader("Logs")
-        st.text_area("Logs display", value='\n'.join(st.session_state.logs), height=200, disabled=True, label_visibility="collapsed")
+    st.markdown("---")
+    st.markdown("<h3>System Logs</h3>", unsafe_allow_html=True)
+    st.text_area("Logs display", value='\n'.join(st.session_state.logs), height=150, disabled=True, label_visibility="collapsed")
+    col_log1, col_log2 = st.columns([1, 1])
+    with col_log1:
         if st.button("Refresh Logs"):
             pass  # Triggers rerun to update logs
+    with col_log2:
         if st.button("Clear Logs"):
             st.session_state.logs = []
             st.rerun()
 
     # Sidebar for controls
     with st.sidebar:
-        st.header("Controls")
-        if st.button("Encode Faces"):
+        st.markdown("<h3 style='margin-bottom: 1rem;'>Controls</h3>", unsafe_allow_html=True)
+        if st.button("📷 Encode Faces"):
             with st.spinner("Encoding faces..."):
                 run_encode()
 
-        if st.button("Mark Absents"):
+        if st.button("📝 Mark Absents"):
             with st.spinner("Marking absents..."):
                 run_mark_absent()
 
-        if st.button("View Attendance"):
-            if os.path.exists(config.ATTENDANCE_FILE):
-                df = pd.read_csv(config.ATTENDANCE_FILE)
-                st.dataframe(df)
-            else:
-                st.error("Attendance.csv not found.")
 
     # Webcam streaming
-    st.header("Attendance Webcam")
+    st.markdown("---")
+    st.markdown("<h3>Live Attendance Webcam</h3>", unsafe_allow_html=True)
+
     ctx = webrtc_streamer(
         key="attendance",
         mode=WebRtcMode.SENDRECV,
@@ -217,6 +391,29 @@ def main():
         else:
             logging.info("🛑 Attendance session stopped.")
         st.session_state.was_playing = ctx.state.playing
+
+    # Clean, Searchable Data Table
+    st.markdown("---")
+    st.markdown("<h3>Attendance Logs</h3>", unsafe_allow_html=True)
+
+    if os.path.exists(config.ATTENDANCE_FILE):
+        df = pd.read_csv(config.ATTENDANCE_FILE)
+
+        # Search Functionality
+        search_query = st.text_input("🔍 Search by Name or Enrollment No", "")
+
+        if search_query:
+            # Case-insensitive search across 'Name' and 'Enrollment' columns
+            mask = df['Name'].astype(str).str.contains(search_query, case=False, na=False) | \
+                   df['Enrollment'].astype(str).str.contains(search_query, case=False, na=False)
+            filtered_df = df[mask]
+        else:
+            filtered_df = df
+
+        st.dataframe(filtered_df, use_container_width=True)
+    else:
+        st.info("No attendance data available yet. Attendance.csv not found.")
+
 
 if __name__ == "__main__":
     main()
